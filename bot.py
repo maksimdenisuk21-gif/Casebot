@@ -4,10 +4,9 @@ from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # =====================
-# НАСТРОЙКИ (НЕ МЕНЯТЬ)
+# CONFIG
 # =====================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
@@ -15,20 +14,22 @@ bot = Bot(token=BOT_TOKEN)
 tg_app = Application.builder().token(BOT_TOKEN).build()
 
 # =====================
-# КОМАНДЫ БОТА
+# COMMANDS
 # =====================
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("CaseFight работает")
+    await update.message.reply_text("CaseFight bot online")
 
 async def buy(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Покупка через Stars позже")
+    await update.message.reply_text("Buy command works")
 
 tg_app.add_handler(CommandHandler("start", start))
 tg_app.add_handler(CommandHandler("buy", buy))
 
 # =====================
-# WEBHOOK ПРИЁМ
+# WEBHOOK HANDLER
 # =====================
+
 @app.post("/")
 async def webhook(req: Request):
     data = await req.json()
@@ -37,14 +38,13 @@ async def webhook(req: Request):
     return {"ok": True}
 
 # =====================
-# СТАРТ СЕРВЕРА
+# STARTUP (БЕЗ setWebhook!)
 # =====================
+
 @app.on_event("startup")
 async def startup():
     await tg_app.initialize()
-    await bot.set_webhook(WEBHOOK_URL)
 
 @app.on_event("shutdown")
 async def shutdown():
-    await bot.delete_webhook()
     await tg_app.shutdown()
