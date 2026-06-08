@@ -3,14 +3,13 @@ from fastapi import FastAPI, Request
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# =====================
-# CONFIG
-# =====================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+if not BOT_TOKEN:
+    raise Exception("BOT_TOKEN is missing in environment variables")
 
 app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
-
 tg_app = Application.builder().token(BOT_TOKEN).build()
 
 # =====================
@@ -27,23 +26,32 @@ tg_app.add_handler(CommandHandler("start", start))
 tg_app.add_handler(CommandHandler("buy", buy))
 
 # =====================
-# WEBHOOK HANDLER
+# WEBHOOK
 # =====================
 
 @app.post("/")
 async def webhook(req: Request):
-    data = await req.json()
-    update = Update.de_json(data, bot)
-    await tg_app.process_update(update)
-    return {"ok": True}
+    try:
+        data = await req.json()
+        print("UPDATE:", data)
+
+        update = Update.de_json(data, bot)
+        await tg_app.process_update(update)
+
+        return {"ok": True}
+
+    except Exception as e:
+        print("ERROR:", e)
+        return {"ok": False}
 
 # =====================
-# STARTUP (БЕЗ setWebhook!)
+# LIFECYCLE
 # =====================
 
 @app.on_event("startup")
 async def startup():
     await tg_app.initialize()
+    print("BOT STARTED")
 
 @app.on_event("shutdown")
 async def shutdown():
